@@ -5,8 +5,11 @@ import requests
 
 from .logger import LogLevel, Logger
 
-
 # functions for REST requests in Wrapper class
+from .utils.captcha import solveCaptchaWithLib
+from .utils.exceptions import CaptchaException
+
+
 class Wrapper:
     # returns formatted log string and color for REST requests
     @staticmethod
@@ -73,6 +76,18 @@ class Wrapper:
                 break
         return None
 
+    @staticmethod
+    def sendRequestBypassingCaptcha(reqsession, method, url, body=None, headerModifications=None, timeout=None, log=None):
+        try:
+            answer = Wrapper.sendRequest(reqsession, method, url, body, headerModifications, timeout, log, checkForCaptcha=True)
+            return answer
+        except CaptchaException as ex:
+            sitekey = str(ex)
+            captcha = solveCaptchaWithLib(sitekey, url)
+            body['captcha_key'] = captcha
+            answer = Wrapper.sendRequest(reqsession, method, url, body, headerModifications, timeout, log, checkForCaptcha=True)
+            return answer
+
     # headerModifications = {"update":{}, "remove":[]}
     @staticmethod
     def sendRequest(reqsession, method, url, body=None, headerModifications=None, timeout=None, log=None, checkForCaptcha=False):
@@ -85,7 +100,10 @@ class Wrapper:
         if hasattr(reqsession, method):  # just checks if post, get, whatever is a valid requests method
             # 1. find function
             stack = inspect.stack()
-            function_name = "({}->{})".format(str(stack[1][0].f_locals['self']).split(' ')[0], stack[1][3])
+            try:
+                function_name = "({}->{})".format(str(stack[1][0].f_locals['self']).split(' ')[0], stack[1][3])
+            except KeyError:
+                function_name = "({}->{})".format(str(stack[2][0].f_locals['self']).split(' ')[0], stack[2][3])
             # 2. edit request session if needed
             if body is None:
                 if headerModifications.get('remove', None) is None:
@@ -123,7 +141,8 @@ class Wrapper:
                 reqsession.cookies.update(response.cookies)
                 if checkForCaptcha:
                     decodedAnswer = response.json()
-                    response.captcha_required = all(item in decodedAnswer for item in ('captcha_key', 'captcha_sitekey', 'captcha_service'))
+                    if all(item in decodedAnswer for item in ('captcha_key', 'captcha_sitekey', 'captcha_service')):
+                        raise CaptchaException(decodedAnswer['captcha_sitekey'])
             # 10. return response object with decompressed content
             return response
         else:

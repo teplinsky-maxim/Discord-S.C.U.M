@@ -99,8 +99,6 @@ class Client:
                 self.__user_token, self.userData = self.remoteAuthLogin(remote_auth)
             else:
                 loginResponse, self.__xfingerprint = self.login(email, password, False, None, None, None, secret, code)
-                if loginResponse.captcha_required:
-                    raise CaptchaException("Captcha is required to be solved")
                 self.s.cookies.update(loginResponse.cookies)
                 self.__user_token = loginResponse.json().get('token')  # update token from "" to actual value
         self.s.headers.update({"Authorization": self.__user_token})

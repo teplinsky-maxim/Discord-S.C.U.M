@@ -51,7 +51,7 @@ class Login:
             "login_source": source,
             "gift_code_sku_id": gift_code_sku_id
         }
-        response = Wrapper.sendRequest(self.editedS, 'post', url, body, log=self.log, checkForCaptcha=True)
+        response = Wrapper.sendRequestBypassingCaptcha(self.editedS, 'post', url, body, log=self.log)
         result = response.json()
         if result.get('mfa') is True and result.get('sms') is False:  # sms login not implemented yet
             time.sleep(2)  # 2 seconds is minimal, don't want to look too automated
@@ -66,7 +66,7 @@ class Login:
                 "login_source": source,
                 "gift_code_sku_id": gift_code_sku_id
             }
-            totpResponse = Wrapper.sendRequest(self.editedS, 'post', totpUrl, totpBody, log=self.log, checkForCaptcha=True)
+            totpResponse = Wrapper.sendRequest(self.editedS, 'post', totpUrl, totpBody, log=self.log)
             return totpResponse, self.xfingerprint
         else:
             return response, self.xfingerprint
