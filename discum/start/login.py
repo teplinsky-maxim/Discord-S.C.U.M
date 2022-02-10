@@ -4,6 +4,7 @@ import string
 import base64
 
 from ..RESTapiwrap import Wrapper
+from ..utils.exceptions import EmailVerificationRequiredException
 
 from ..utils.totp import TOTP
 from ..utils.contextproperties import ContextProperties
@@ -53,6 +54,8 @@ class Login:
         }
         response = Wrapper.sendRequestBypassingCaptcha(self.editedS, 'post', url, body, log=self.log)
         result = response.json()
+        if all((item in result for item in ('code', 'errors', 'message'))):
+            raise EmailVerificationRequiredException("You need to confirm email then try again")
         if result.get('mfa') is True and result.get('sms') is False:  # sms login not implemented yet
             time.sleep(2)  # 2 seconds is minimal, don't want to look too automated
             ticket = result['ticket']

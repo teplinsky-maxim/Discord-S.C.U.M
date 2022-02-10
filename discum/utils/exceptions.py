@@ -4,3 +4,7 @@ class CaptchaException(Exception):
 
 class InvalidGuildInviteException(Exception):
     pass
+
+
+class EmailVerificationRequiredException(Exception):
+    pass
