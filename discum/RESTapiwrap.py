@@ -60,10 +60,12 @@ class Wrapper:
 
     # only for "Connection reset by peer" errors. Influenced by praw's retry code
     @staticmethod
-    def retryLogic(reqMethod, url, data, log):
+    def retryLogic(reqMethod, url, data, log, proxies):
         remaining_attempts = 3
         while True:
             try:
+                if proxies:
+                    data['proxies'] = proxies
                 return reqMethod(url=url, **data)
             except requests.exceptions.ConnectionError:
                 if log:
@@ -129,7 +131,7 @@ class Wrapper:
             if timeout is not None:
                 data['timeout'] = timeout
             # 6. the request
-            response = Wrapper.retryLogic(getattr(s, method), url, data, log)
+            response = Wrapper.retryLogic(getattr(s, method), url, data, log, s.proxies)
             # 7. brotli decompression of response
             if response and response.headers.get('Content-Encoding') == "br":  # decompression; gzip/deflate is automatically handled by requests module
                 response._content = Wrapper.brdecompress(response.content, log)

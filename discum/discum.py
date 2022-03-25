@@ -1,6 +1,5 @@
 # to speed up importing discum & only import modules when they are needed
 from .importmanager import Imports
-from .utils.exceptions import CaptchaException
 
 imports = Imports(
     {
@@ -165,7 +164,6 @@ class Client:
 
             return
 
-        # proxy type(s)
         regex_prox = r'(http|https|socks4|socks4a|socks5|socks5h)?(?::\/\/)?(\w+(?::\w+)?@)?((?:\d{1,3})(?:\.\d{1,3}){3})(?::(\d{1,5}))'
         search = re.search(regex_prox, newProxy)
         if search:
@@ -184,7 +182,10 @@ class Client:
             proxy_port = search.group(4)
 
             # proxy updating
-            proxies = {t: '{}://{}:{}'.format(t, proxy_host, proxy_port) for t in proxy_type}
+            if auth:
+                proxies = {t: '{}://{}:{}@{}:{}'.format('http', proxy_auth[0], proxy_auth[1], proxy_host, proxy_port) for t in proxy_type}
+            else:
+                proxies = {t: '{}://{}:{}'.format('http', proxy_host, proxy_port) for t in proxy_type}
 
             self.s.proxies.update(proxies)
             if auth:
